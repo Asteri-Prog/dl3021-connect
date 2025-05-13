@@ -1,5 +1,6 @@
 import pyvisa
 from LabInstruments.DL3000 import DL3000
+import msvcrt
 
 def find_dl3000_devices(resource_manager):
     """Поиск подключенных устройств Rigol DL3000"""
@@ -46,23 +47,55 @@ def main():
         inst.reset()
         print("Устройство сброшено к заводским настройкам")
         
+        # Устанавливаем необходимые параметры
+        inst.set_input_mode("BATTERY")
+        inst.set_current_v_limit(3.3)
         inst.set_mode("CURRENT")
         inst.set_cc_current(0.050)
-        print("Установлен режим постоянного тока (CC) с током 50 мА")
-
-        inst.enable()
-        print("Открыто")
         
-        voltage = inst.voltage()
-        print(f"Измеренное напряжение: {voltage} V")
+        inst.enable()
+        print("Устройство включено. Нажмите любую клавишу для остановки...")
+        
+        # Бесконечный цикл считывания параметров
+        try:
+            while True:
+                # Считываем все доступные параметры
+                voltage = inst.voltage()
+                current = inst.current()
+                power = inst.power()
+                resistance = inst.resistance()
+                capacity = inst.capability()
+                watthours = inst.watthours()
+                discharging_time = inst.discharging_time()
+                
+                # Выводим параметры
+                print("\n--- Текущие показания ---")
+                print(f"Напряжение: {voltage:.6f} V")
+                print(f"Ток: {current:.6f} A")
+                print(f"Мощность: {power:.6f} W")
+                print(f"Сопротивление: {resistance:.6f} Ω")
+                print(f"Ёмкость: {capacity:.6f} Ah")
+                print(f"Энергия: {watthours:.6f} Wh")
+                print(f"Время разряда: {discharging_time:.6f} s")
+                
+                if msvcrt.kbhit():
+                    break
 
+                
+        except KeyboardInterrupt:
+            pass
+        
+        # Завершение работы
         inst.disable()
-        print("Закрыто")
+        print("\nУстройство отключено")
         
     except pyvisa.errors.VisaIOError as e:
         print(f"Ошибка работы с прибором: {str(e)}")
     except Exception as e:
         print(f"Произошла ошибка: {str(e)}")
+    finally:
+        # Закрываем соединение
+        device['resource'].close()
 
 if __name__ == "__main__":
     main()
