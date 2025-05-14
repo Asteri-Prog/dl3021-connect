@@ -25,7 +25,7 @@ def find_dl3000_devices(resource_manager):
     return devices
 
 def main():
-    rm = pyvisa.ResourceManager('@py')
+    rm = pyvisa.ResourceManager()
     
     print("Поиск подключенных устройств Rigol DL3000...")
     devices = find_dl3000_devices(rm)
@@ -49,8 +49,7 @@ def main():
         
         # Устанавливаем необходимые параметры
         inst.set_input_mode("BATTERY")
-        inst.set_current_v_limit(3.3)
-        inst.set_mode("CURRENT")
+        inst.set_current_v_limit(3)
         inst.set_cc_current(0.050)
         
         inst.enable()
@@ -76,7 +75,7 @@ def main():
                 print(f"Сопротивление: {resistance:.6f} Ω")
                 print(f"Ёмкость: {capacity:.6f} Ah")
                 print(f"Энергия: {watthours:.6f} Wh")
-                print(f"Время разряда: {discharging_time:.6f} s")
+                print(f"Время разряда: {discharging_time} s")
                 
                 if msvcrt.kbhit():
                     break
@@ -85,15 +84,15 @@ def main():
         except KeyboardInterrupt:
             pass
         
-        # Завершение работы
-        inst.disable()
-        print("\nУстройство отключено")
-        
     except pyvisa.errors.VisaIOError as e:
         print(f"Ошибка работы с прибором: {str(e)}")
     except Exception as e:
         print(f"Произошла ошибка: {str(e)}")
     finally:
+        # Завершение работы
+        inst.disable()
+        print("\nУстройство отключено")
+        
         # Закрываем соединение
         device['resource'].close()
 

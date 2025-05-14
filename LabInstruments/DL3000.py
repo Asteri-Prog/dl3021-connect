@@ -35,7 +35,7 @@ class DL3000(object):
         return float(self.inst.query(":MEAS:WATT?").partition("\n")[0])
 
     def discharging_time(self):
-        return float(self.inst.query(":MEAS:DISCHARGINGTIME?").partition("\n")[0])
+        return self.inst.query(":MEAS:DISCHARGINGTIME?").partition("\n")[0]
 
     def set_cc_slew_rate(self, slew):
         # My DL3021 returns a string like '0.000067\n0'
