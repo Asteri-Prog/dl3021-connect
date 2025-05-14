@@ -2,6 +2,9 @@
 
 __all__ = ["DL3000"]
 
+import time
+
+
 class DL3000(object):
     """
     Rigol DL3000 command wrapper.
@@ -68,13 +71,59 @@ class DL3000(object):
         """
         self.inst.write(":SOURCE:FUNCTION {}".format(mode))
 
-    def set_input_mode(self, mode="BATTERY"):
+    def set_app_mode(self, mode="BATTERY"):
         """
         Set the load input mode to "FIXED", "LIST", "WAVE", "BATTERY"
         """
         self.inst.write(":SOURCE:FUNCTION:MODE {}".format(mode))
+    
+    import time
 
-    def set_current_v_limit(self, vlim=5):
+    def set_battery_vstop(self, voltage):
+        """
+        Sets the stop voltage (V_Stop) in BATTERY mode using virtual panel emulation
+        
+        Args:
+            voltage (float): Stop voltage value (e.g., 3.7)
+        """
+        # Configure delays for different operations
+        base_delay=0.2
+        short_delay = base_delay * 0.5  # 0.1s for quick operations
+        medium_delay = base_delay       # 0.2s default
+        long_delay = base_delay * 2.5   # 0.5s for mode changes
+        
+        # Enable debug mode for virtual panel
+        self.inst.write(":DEBug:KEY ON")
+        time.sleep(short_delay)
+        
+        # Switch to BATTERY mode if not already active
+        self.set_app_mode("BATTERY")
+        time.sleep(long_delay)
+        
+        # Press Third menu key (16) twice to access V_Stop
+        self.inst.write(":SYSTem:KEY 16")
+        time.sleep(medium_delay)
+        self.inst.write(":SYSTem:KEY 16")
+        time.sleep(long_delay)
+        
+        # Enter voltage value digit by digit
+        voltage_str = f"{voltage:.3f}"  # Format to 3 decimal places
+        for char in voltage_str:
+            if char == '.':
+                self.inst.write(":SYSTem:KEY 30")  # Decimal point
+            elif char.isdigit():
+                key_code = 20 + int(char)  # Numeric keys 0-9 (codes 20-29)
+                self.inst.write(f":SYSTem:KEY {key_code}")
+            time.sleep(medium_delay)
+        
+        # Confirm selection (OK key - 41)
+        self.inst.write(":SYSTem:KEY 41")
+        time.sleep(medium_delay)
+        
+        # Disable debug mode
+        self.inst.write(":DEBug:KEY OFF")
+
+    def set_cc_vlim(self, vlim=5):
         """
         Sets the voltage limit in CC mode
         """
