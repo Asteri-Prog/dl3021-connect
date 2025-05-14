@@ -48,7 +48,7 @@ def main():
         print("Устройство сброшено к заводским настройкам")
         
         # Устанавливаем необходимые параметры
-        inst.set_input_mode("BATTERY")
+        inst.set_app_mode("BATTERY")
         inst.set_current_v_limit(3)
         inst.set_cc_current(0.050)
         
