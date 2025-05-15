@@ -3,3 +3,4 @@ pyvisa-py
 zeroconf
 matplotlib
 pandas
+plotly

@@ -4,9 +4,9 @@ import msvcrt
 import time
 import csv
 from datetime import datetime
-import matplotlib.pyplot as plt
-import pandas as pd
 import os
+
+from charts import plot_battery_data
 
 class ConsoleUpdater:
     """Класс для обновления строк в консоли"""
@@ -55,49 +55,6 @@ def log_to_file(filename, data):
             writer.writeheader()
         writer.writerow(data)
 
-def plot_data(filename):
-    """Строит графики из файла с данными"""
-    try:
-        data = pd.read_csv(filename)
-        
-        # Создаем фигуру с несколькими графиками
-        fig, axes = plt.subplots(3, 1, figsize=(10, 12))
-        
-        # График напряжения и тока
-        axes[0].plot(data['timestamp'], data['voltage'], 'r-', label='Voltage (V)')
-        axes[0].set_ylabel('Voltage (V)')
-        ax2 = axes[0].twinx()
-        ax2.plot(data['timestamp'], data['current'], 'b-', label='Current (A)')
-        ax2.set_ylabel('Current (A)')
-        axes[0].set_title('Voltage and Current vs Time')
-        axes[0].grid(True)
-        
-        # График мощности
-        axes[1].plot(data['timestamp'], data['power'], 'g-')
-        axes[1].set_ylabel('Power (W)')
-        axes[1].set_title('Power vs Time')
-        axes[1].grid(True)
-        
-        # График ёмкости и энергии
-        axes[2].plot(data['timestamp'], data['capacity'], 'm-', label='Capacity (Ah)')
-        axes[2].set_ylabel('Capacity (Ah)')
-        ax2 = axes[2].twinx()
-        ax2.plot(data['timestamp'], data['watthours'], 'c-', label='Energy (Wh)')
-        ax2.set_ylabel('Energy (Wh)')
-        axes[2].set_title('Capacity and Energy vs Time')
-        axes[2].grid(True)
-        
-        # Форматирование времени на оси X
-        for ax in axes:
-            ax.xaxis.set_major_locator(plt.MaxNLocator(10))
-            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
-        
-        plt.tight_layout()
-        plt.show()
-        
-    except Exception as e:
-        print(f"Ошибка при построении графиков: {str(e)}")
-
 def main():
     rm = pyvisa.ResourceManager()
     
@@ -125,6 +82,8 @@ def main():
 
         inst.reset()
         print("Устройство сброшено к заводским настройкам")
+        
+        vstop = 3.3
         
         # Устанавливаем необходимые параметры
         inst.set_app_mode("BATTERY")
@@ -154,7 +113,7 @@ def main():
                     break
                 
                 # Считываем все доступные параметры
-                timestamp = datetime.now().strftime('%H:%M:%S')
+                timestamp = datetime.now().strftime('%d-%m-%Y %H:%M:%S') 
                 voltage = inst.voltage()
                 current = inst.current()
                 power = inst.power()
@@ -190,6 +149,9 @@ def main():
                     f"Время разряда: {discharging_time}"
                 )
                 
+                if vstop >= voltage:
+                    break
+                
                 time.sleep(1)  # Интервал между измерениями
                 
         except KeyboardInterrupt:
@@ -201,7 +163,7 @@ def main():
         
         # Предлагаем построить графики
         if input("\nПостроить графики? (y/n): ").lower() == 'y':
-            plot_data(log_filename)
+            plot_battery_data(log_filename)
         
     except pyvisa.errors.VisaIOError as e:
         print(f"Ошибка работы с прибором: {str(e)}")
