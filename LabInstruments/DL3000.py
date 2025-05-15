@@ -87,13 +87,13 @@ class DL3000(object):
             voltage (float): Stop voltage value (e.g., 3.7)
         """
         # Configure delays for different operations
-        base_delay=0.2
+        base_delay=0
         short_delay = base_delay * 0.5  # 0.1s for quick operations
         medium_delay = base_delay       # 0.2s default
         long_delay = base_delay * 2.5   # 0.5s for mode changes
         
         # Enable debug mode for virtual panel
-        self.inst.write(":DEBug:KEY ON")
+        self.inst.write(":DEBUG:KEY ON")
         time.sleep(short_delay)
         
         # Switch to BATTERY mode if not already active
@@ -101,23 +101,23 @@ class DL3000(object):
         time.sleep(long_delay)
         
         # Press Third menu key (16) twice to access V_Stop
-        self.inst.write(":SYSTem:KEY 16")
+        self.inst.write(":SYSTEM:KEY 16")
         time.sleep(medium_delay)
-        self.inst.write(":SYSTem:KEY 16")
+        self.inst.write(":SYSTEM:KEY 16")
         time.sleep(long_delay)
         
         # Enter voltage value digit by digit
         voltage_str = f"{voltage:.3f}"  # Format to 3 decimal places
         for char in voltage_str:
             if char == '.':
-                self.inst.write(":SYSTem:KEY 30")  # Decimal point
+                self.inst.write(":SYSTEM:KEY 30")  # Decimal point
             elif char.isdigit():
                 key_code = 20 + int(char)  # Numeric keys 0-9 (codes 20-29)
-                self.inst.write(f":SYSTem:KEY {key_code}")
+                self.inst.write(f":SYSTEM:KEY {key_code}")
             time.sleep(medium_delay)
         
         # Confirm selection (OK key - 41)
-        self.inst.write(":SYSTem:KEY 41")
+        self.inst.write(":SYSTEM:KEY 41")
         time.sleep(medium_delay)
         
         # Disable debug mode

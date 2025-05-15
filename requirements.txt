@@ -2,3 +2,4 @@ pyvisa
 pyvisa-py
 zeroconf
 matplotlib
+plotly
