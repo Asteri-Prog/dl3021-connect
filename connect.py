@@ -83,12 +83,13 @@ def main():
         inst.reset()
         print("Устройство сброшено к заводским настройкам")
         
-        vstop = 3.3
+        vstop = 2
+        cc = 0.020
         
         # Устанавливаем необходимые параметры
         inst.set_app_mode("BATTERY")
-        inst.set_battery_vstop(3.3)
-        inst.set_cc_current(0.050)
+        inst.set_battery_vstop(vstop)
+        inst.set_cc_current(cc)
         
         inst.enable()
         print("Устройство включено. Нажмите любую клавишу для остановки...")
