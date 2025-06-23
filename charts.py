@@ -9,8 +9,19 @@ from plotly.subplots import make_subplots
 import os
 from datetime import datetime, timedelta
 
-def plot_battery_data(filename):
+def plot_battery_data(filename, battery_name=None, battery_capacity=None):
     try:
+        # Попытка извлечь имя и ёмкость из имени файла, если не передано явно
+        if battery_name is None or battery_capacity is None:
+            base = os.path.basename(filename)
+            parts = base.split('_')
+            if len(parts) >= 3:
+                battery_name = parts[0]
+                battery_capacity = parts[1].replace('mAh', '')
+            else:
+                battery_name = battery_name or "?"
+                battery_capacity = battery_capacity or "?"
+
         data = pd.read_csv(filename)
         required_columns = ['timestamp', 'voltage', 'current', 'power', 'capacity', 'watthours']
         if not all(col in data.columns for col in required_columns):
@@ -87,13 +98,24 @@ def plot_battery_data(filename):
         if data['datetime'].iloc[0].date() != data['datetime'].iloc[-1].date():
             date_range += f" - {data['datetime'].iloc[-1].strftime('%d.%m.%Y')}"
 
+        # Итоговые значения
+        final_capacity = data['capacity'].iloc[-1]
+        final_watthours = data['watthours'].iloc[-1]
+        total_time = data['datetime'].iloc[-1] - data['datetime'].iloc[0]
+        total_hours = total_time.total_seconds() / 3600
+
+        # Формируем строку с итогами
+        summary = f"Итоговая ёмкость: {final_capacity:.3f} А·ч | Итоговая энергия: {final_watthours:.3f} Вт·ч | Время работы: {str(total_time).split('.')[0]} (≈ {total_hours:.2f} ч)"
+
         fig.update_layout(
-            title_text=f'Результаты тестирования батареи ({date_range})<br>Средний ток: {avg_current:.3f} А',
+            title_text=f'Результаты тестирования батареи: {battery_name} ({battery_capacity} мА·ч) ({date_range})<br>Средний ток: {avg_current:.3f} А<br>{summary}',
             height=1800,
             showlegend=False,
             hovermode="x unified",
             margin=dict(t=100, b=80, l=50, r=30),
         )
+
+        print(summary)
 
         plot_filename = os.path.splitext(filename)[0] + '_interactive.html'
         fig.write_html(plot_filename)

@@ -72,8 +72,19 @@ def main():
     device = devices[0]
     print(f"\nПодключаемся к устройству: {device['idn']}")
     
-    # Создаем имя файла для логов
-    log_filename = f"battery_test_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    print("Введите параметры тестируемой батареи:")
+    battery_name = input("Имя батареи (например, quallion ql0200i-a): ").strip()
+    battery_capacity = input("Заявленная ёмкость, mAh: ").strip()
+    vstop_input = input("Vstop, В (по умолчанию 2.5): ").strip()
+    cc_input = input("Ток разряда, A (по умолчанию 0.050): ").strip()
+
+    # Значения по умолчанию
+    vstop = float(vstop_input) if vstop_input else 2.5
+    cc = float(cc_input) if cc_input else 0.050
+
+    # Формируем имя файла для логов
+    now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_filename = f"{battery_name.replace(' ', '_')}_{battery_capacity}mAh_test_{now_str}.csv"
     print(f"Данные будут записываться в файл: {log_filename}")
     
     try:
@@ -82,9 +93,6 @@ def main():
 
         inst.reset()
         print("Устройство сброшено к заводским настройкам")
-        
-        vstop = 2
-        cc = 0.020
         
         # Устанавливаем необходимые параметры
         inst.set_app_mode("BATTERY")
@@ -164,7 +172,7 @@ def main():
         
         # Предлагаем построить графики
         if input("\nПостроить графики? (y/n): ").lower() == 'y':
-            plot_battery_data(log_filename)
+            plot_battery_data(log_filename, battery_name, battery_capacity)
         
     except pyvisa.errors.VisaIOError as e:
         print(f"Ошибка работы с прибором: {str(e)}")
