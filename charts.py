@@ -105,7 +105,7 @@ def plot_battery_data(filename, battery_name=None, battery_capacity=None):
         total_hours = total_time.total_seconds() / 3600
 
         # Формируем строку с итогами
-        summary = f"Итоговая ёмкость: {final_capacity:.3f} А·ч | Итоговая энергия: {final_watthours:.3f} Вт·ч | Время работы: {str(total_time).split('.')[0]} (≈ {total_hours:.2f} ч)"
+        summary = f"Итоговая ёмкость: {final_capacity:.3f} А·ч<br>Итоговая энергия: {final_watthours:.3f} Вт·ч<br>Время работы: {str(total_time).split('.')[0]} (≈ {total_hours:.2f} ч)"
 
         fig.update_layout(
             title_text=f'Результаты тестирования батареи: {battery_name} ({battery_capacity} мА·ч) ({date_range})<br>Средний ток: {avg_current:.3f} А<br>{summary}',
