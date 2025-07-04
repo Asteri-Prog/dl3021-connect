@@ -15,15 +15,16 @@ def plot_battery_data(filename, battery_name=None, battery_capacity=None):
         if battery_name is None or battery_capacity is None:
             base = os.path.basename(filename)
             parts = base.split('_')
-            if len(parts) >= 3:
-                battery_name = parts[0]
-                battery_capacity = parts[1].replace('mAh', '')
+            cap_idx = next((i for i, p in enumerate(parts) if 'mAh' in p), None)
+            if cap_idx is not None:
+                battery_capacity = parts[cap_idx].replace('mAh', '')
+                battery_name = ' '.join(parts[:cap_idx])
             else:
                 battery_name = battery_name or "?"
                 battery_capacity = battery_capacity or "?"
 
         data = pd.read_csv(filename)
-        required_columns = ['timestamp', 'voltage', 'current', 'power', 'capacity', 'watthours']
+        required_columns = ['timestamp', 'voltage', 'current', 'power', 'capacity', 'watthours', 'resistance']
         if not all(col in data.columns for col in required_columns):
             raise ValueError("Файл не содержит всех необходимых колонок данных")
 
@@ -61,16 +62,18 @@ def plot_battery_data(filename, battery_name=None, battery_capacity=None):
                 ]
 
         avg_current = data['current'].mean()
+        avg_resistance = data['resistance'].mean()
 
         fig = make_subplots(
-            rows=4, cols=1,
+            rows=5, cols=1,
             shared_xaxes=True,
             vertical_spacing=0.07,
             subplot_titles=(
                 'Изменение напряжения во времени',
                 'Изменение мощности во времени',
                 'Ёмкость',
-                'Энергия'
+                'Энергия',
+                'Сопротивление'
             )
         )
 
@@ -78,13 +81,15 @@ def plot_battery_data(filename, battery_name=None, battery_capacity=None):
         fig.add_trace(go.Scatter(x=time_labels, y=data['power'], name='Мощность', line=dict(color='green')), row=2, col=1)
         fig.add_trace(go.Scatter(x=time_labels, y=data['capacity'], name='Ёмкость', line=dict(color='purple')), row=3, col=1)
         fig.add_trace(go.Scatter(x=time_labels, y=data['watthours'], name='Энергия', line=dict(color='blue')), row=4, col=1)
+        fig.add_trace(go.Scatter(x=time_labels, y=data['resistance'], name='Сопротивление', line=dict(color='orange')), row=5, col=1)
 
         fig.update_yaxes(title_text="Напряжение, В", row=1, col=1)
         fig.update_yaxes(title_text="Мощность, Вт", row=2, col=1)
-        fig.update_yaxes(title_text="Ёмкость, А·ч", row=3, col=1)
+        fig.update_yaxes(title_text="Ёмкость, мА·ч", row=3, col=1)
         fig.update_yaxes(title_text="Энергия, Вт·ч", row=4, col=1)
+        fig.update_yaxes(title_text="Сопротивление, Ом", row=5, col=1)
 
-        for i in range(1, 5):
+        for i in range(1, 6):
             fig.update_xaxes(
                 title_text="",
                 ticks="outside",
@@ -105,14 +110,14 @@ def plot_battery_data(filename, battery_name=None, battery_capacity=None):
         total_hours = total_time.total_seconds() / 3600
 
         # Формируем строку с итогами
-        summary = f"Итоговая ёмкость: {final_capacity:.3f} А·ч<br>Итоговая энергия: {final_watthours:.3f} Вт·ч<br>Время работы: {str(total_time).split('.')[0]} (≈ {total_hours:.2f} ч)"
+        summary = f"Заявленная ёмкость {battery_capacity} мА·ч<br>Итоговая ёмкость: {final_capacity:.3f} мА·ч<br>Итоговая энергия: {final_watthours:.3f} Вт·ч<br>Время работы: {str(total_time).split('.')[0]} (≈ {total_hours:.2f} ч)"
 
         fig.update_layout(
-            title_text=f'Результаты тестирования батареи: {battery_name} ({battery_capacity} мА·ч) ({date_range})<br>Средний ток: {avg_current:.3f} А<br>{summary}',
-            height=1800,
+            title_text=f'<b>Результаты тестирования батареи: {battery_name} ({battery_capacity} мА·ч) ({date_range})</b><br>Средний ток: {avg_current:.3f} А<br>Среднее сопротивление: {avg_resistance:.3f} Ом<br>{summary}',
+            height=2200,
             showlegend=False,
             hovermode="x unified",
-            margin=dict(t=100, b=80, l=50, r=30),
+            margin=dict(t=340, b=80, l=50, r=30),
         )
 
         print(summary)
