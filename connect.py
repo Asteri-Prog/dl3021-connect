@@ -5,6 +5,7 @@ import time
 import csv
 from datetime import datetime
 import os
+import logging
 
 from charts import plot_battery_data
 
@@ -57,6 +58,19 @@ def log_to_file(filename, data):
 
 def main():
     rm = pyvisa.ResourceManager()
+    # Настройка логирования в файл
+    run_ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    os.makedirs(os.path.join(os.getcwd(), "logs"), exist_ok=True)
+    log_path = os.path.join(os.getcwd(), f"logs\\connect_run_{run_ts}.log")
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        handlers=[
+            logging.FileHandler(log_path, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    logging.info("Старт приложения connect.py")
     
     print("Поиск подключенных устройств Rigol DL3000...")
     devices = find_dl3000_devices(rm)
@@ -65,9 +79,9 @@ def main():
         print("Не найдено ни одного устройства Rigol DL3000")
         return
     
-    print(f"Найдено устройств: {len(devices)}")
+    logging.info(f"Найдено устройств DL3000: {len(devices)}")
     for i, dev in enumerate(devices, 1):
-        print(f"{i}. {dev['idn']} ({dev['resource_str']})")
+        logging.info(f"Устройство {i}: {dev['idn']} ({dev['resource_str']})")
 
     device = devices[0]
     print(f"\nПодключаемся к устройству: {device['idn']}")
@@ -92,15 +106,16 @@ def main():
         console = ConsoleUpdater()
 
         inst.reset()
-        print("Устройство сброшено к заводским настройкам")
+        logging.info("Устройство сброшено к заводским настройкам")
         
         # Устанавливаем необходимые параметры
         inst.set_app_mode("BATTERY")
         inst.set_battery_vstop(vstop)
         inst.set_cc_current(cc)
+        logging.info(f"Режим BATTERY, Vstop={vstop} В, Icc={cc} А")
         
         inst.enable()
-        print("Устройство включено. Нажмите любую клавишу для остановки...")
+        logging.info("Устройство включено. Нажмите любую клавишу для остановки...")
         time.sleep(1)  # Даем устройству время на стабилизацию
         
         # Выводим заголовки перед началом цикла
@@ -168,23 +183,47 @@ def main():
         
         # Завершение работы
         inst.disable()
-        print("\nУстройство отключено")
+        logging.info("Нагрузка отключена")
         
         # Предлагаем построить графики
         if input("\nПостроить графики? (y/n): ").lower() == 'y':
             plot_battery_data(log_filename, battery_name, battery_capacity)
+            logging.info("Построены графики")
         
     except pyvisa.errors.VisaIOError as e:
-        print(f"Ошибка работы с прибором: {str(e)}")
+        err_text = f"Ошибка работы с прибором: {str(e)}"
+        print(err_text)
+        logging.exception(err_text)
+        try:
+            CTkMessagebox(option_focus=1, title="Error", message=err_text, icon="cancel")
+        finally:
+            input("Нажмите Enter для выхода...")
     except Exception as e:
-        print(f"Произошла ошибка: {str(e)}")
+        from CTkMessagebox import CTkMessagebox
+        err_text = f"Произошла ошибка: {str(e)}"
+        print(err_text)
+        logging.exception(err_text)
+        try:
+            CTkMessagebox(option_focus=1, title="Error", message=err_text, icon="cancel")
+        finally:
+            input("Нажмите Enter для выхода...")
     finally:
         # Завершение работы
-        inst.disable()
-        print("\nУстройство отключено")
+        try:
+            if 'inst' in locals() and inst is not None:
+                inst.disable()
+                logging.info("Нагрузка отключена (finalize)")
+                print("\nУстройство отключено")
+        except Exception:
+            logging.exception("Ошибка при отключении нагрузки")
         
         # Закрываем соединение
-        device['resource'].close()
+        try:
+            if 'device' in locals() and device and 'resource' in device:
+                device['resource'].close()
+                logging.info("Соединение с устройством закрыто")
+        except Exception:
+            logging.exception("Ошибка при закрытии соединения с устройством")
 
 if __name__ == "__main__":
     main()

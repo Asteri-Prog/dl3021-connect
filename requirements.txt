@@ -4,3 +4,4 @@ zeroconf
 matplotlib
 pandas
 plotly
+CTkMessagebox
