@@ -1,0 +1,15 @@
+Построение графиков с помощью charts.py
+
+usage: charts.py [-h] [--type {1,2,dl3021,nrf}] [--file FILE]
+
+options:
+  -h, --help            show help message and exit
+  --type {1,2,dl3021,nrf}
+                        Тип графика: 1 или dl3021 - DL3021 логи, 2 или nrf - NRF логи
+  --file FILE           Путь к CSV файлу с данными
+
+Примеры использования:
+  python charts.py --type 1 --file data.csv
+  python charts.py --type 2 --file nrf_data.csv
+  python charts.py --type 2 (путь будет запрошен интерактивно)
+  python charts.py  (интерактивный режим)
