@@ -98,7 +98,10 @@ def main():
 
     # Формируем имя файла для логов
     now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_filename = f"{battery_name.replace(' ', '_')}_{battery_capacity}mAh_test_{now_str}.csv"
+    base_filename = f"{battery_name.replace(' ', '_')}_{battery_capacity}mAh_test_{now_str}"
+    output_dir = os.path.join(os.getcwd(), base_filename)
+    os.makedirs(output_dir, exist_ok=True)
+    log_filename = os.path.join(output_dir, base_filename + ".csv")
     print(f"Данные будут записываться в файл: {log_filename}")
     
     try:
