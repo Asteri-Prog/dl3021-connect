@@ -45,10 +45,6 @@ class DL3000(object):
         self.inst.write(f":SOURCE:CURRENT:SLEW {slew}")
     
     def is_enabled(self):
-        """
-        Enable the electronic load
-        Equivalent to pressing "ON/OFF" when the load is ON
-        """
         return self.inst.query(":SOURCE:INPUT:STAT?").strip() == "1"
 
     def enable(self):
